@@ -1,47 +1,46 @@
 # node-red-dashboard-2-ui-header
 
-Eine Header-Node für **FlowFuse Dashboard 2.0**. Sie verhält sich wie eine kleine
-Gruppe, deren Elemente (Text, Buttons, Dropdowns) **im Header neben dem
-Seitentitel** gerendert werden – auf **jeder** Seite des Dashboards.
+A header node for **FlowFuse Dashboard 2.0**. It behaves like a small
+group whose elements (text, buttons, dropdowns) are rendered **in the header next to the
+page title** — on **every** page of the dashboard.
 
-## Funktionsweise (kurz)
+## How It Works (Brief)
 
-- Die Node ist **ui-base-scoped** (keine Group/Page) → das Baseline-Layout
-  rendert sie global auf allen Seiten.
-- Der Inhalt wird per Vue-**Teleport** in feste App-Bar-Ziele gemountet:
-  - `#app-bar-title` → links, direkt neben dem Seitentitel (`Position: Left`)
-  - `#app-bar-actions` → rechts in der App-Bar (`Position: Right`)
-- Items werden **in der Node selbst** konfiguriert (Core-Widgets lassen sich
-  nicht in eine Fremd-Group einhängen).
+- The node is **ui-base-scoped** (no Group/Page) → the Baseline layout
+  renders it globally on all pages.
+- Content is mounted via Vue **Teleport** into fixed app bar targets:
+  - `#app-bar-title` → left, directly next to the page title (`Position: Left`)
+  - `#app-bar-actions` → right in the app bar (`Position: Right`)
+- Items are configured **directly in the node** (core widgets cannot be nested in a foreign group).
 
-## Item-Typen
+## Item Types
 
-| Typ | Verhalten |
-|-----|-----------|
-| Text | Statischer Text, oder *Dynamic* → zeigt das letzte `msg.payload` |
-| Button | Sendet beim Klick `{ payload, topic }` in den Flow |
-| Dropdown | Sendet bei Auswahl `{ payload: value, topic }`. Optionen: `value=Label` (pro Zeile) |
+| Type | Behavior |
+|------|----------|
+| Text | Static text, or *Dynamic* → displays the latest `msg.payload` |
+| Button | Sends `{ payload, topic }` into the flow on click |
+| Dropdown | Sends `{ payload: value, topic }` on selection. Options: `value=Label` (one per line) |
 
-## Installation (lokale Entwicklung)
+## Installation (Local Development)
 
 ```bash
-# im Plugin-Ordner
+# in the plugin directory
 npm install
-npm run build      # erzeugt resources/ui-header.umd.js
+npm run build      # generates resources/ui-header.umd.js
 
-# ins Node-RED user dir installieren
+# install into Node-RED user directory
 cd ~/.node-red
 npm install /Users/ben/Coding_root/nodered/ui-header
 ```
 
-Danach Node-RED neu starten. Nach Änderungen im `/ui`-Ordner jeweils erneut
-`npm run build` ausführen.
+Then restart Node-RED. After changes to the `/ui` directory, run
+`npm run build` again.
 
-## Nutzung
+## Usage
 
-1. `ui header` Node aus der Palette ziehen.
-2. Dashboard (ui-base) und Position wählen.
-3. Items hinzufügen (Text/Button/Dropdown).
-4. Deploy → Inhalt erscheint im Header.
-5. Button/Dropdown geben `msg` aus; an den Eingang gesendete `msg` aktualisieren
-   *Dynamic*-Text-Items.
+1. Drag the `ui header` node from the palette.
+2. Select the dashboard (ui-base) and position.
+3. Add items (Text/Button/Dropdown).
+4. Deploy → content appears in the header.
+5. Buttons/dropdowns emit `msg` objects; messages sent to the node's input
+   update *Dynamic* text items.
