@@ -1,0 +1,384 @@
+<script type="text/javascript">
+    RED.nodes.registerType('ui-header', {
+        category: RED._('@flowfuse/node-red-dashboard/ui-base:ui-base.label.category'),
+        color: RED._('@flowfuse/node-red-dashboard/ui-base:ui-base.colors.light'),
+        defaults: {
+            name: { value: '' },
+            // ui-base scoped (no group) => renders on every page in the header
+            ui: { type: 'ui-base', value: '', required: true },
+            align: { value: 'left' },
+            order: { value: 0 },
+            items: { value: [] },
+            pages: { value: [] }
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: 'font-awesome/fa-window-maximize',
+        paletteLabel: 'ui header',
+        label: function () {
+            return this.name || 'ui-header'
+        },
+        labelStyle: function () {
+            return this.name ? 'node_label_italic' : ''
+        },
+        oneditprepare: function () {
+            const node = this
+
+            // --- Items editable list --------------------------------------
+            const typeOptions = [
+                { value: 'text', label: 'Text' },
+                { value: 'button', label: 'Button' },
+                { value: 'dropdown', label: 'Dropdown' },
+                { value: 'template', label: 'Template/HTML' }
+            ]
+
+            function rowVisibility (row) {
+                const type = row.find('.ui-header-item-type').val()
+                row.find('.ui-header-row-payload').toggle(type === 'button')
+                row.find('.ui-header-row-options').toggle(type === 'dropdown')
+                row.find('.ui-header-row-html').toggle(type === 'template')
+                row.find('.ui-header-row-dynamic').toggle(type === 'text')
+                row.find('.ui-header-row-key').toggle(type === 'text' || type === 'template')
+                row.find('.ui-header-row-color').toggle(type !== 'template')
+                row.find('.ui-header-row-style').toggle(type === 'text' || type === 'button')
+                row.find('.ui-header-row-icon').toggle(type === 'button')
+                row.find('.ui-header-row-iconpos').toggle(type === 'button')
+                row.find('.ui-header-row-align').toggle(type === 'text' || type === 'button' || type === 'template')
+                row.find('.ui-header-row-width').toggle(type === 'text' || type === 'button')
+                row.find('.ui-header-row-topic').toggle(type === 'button' || type === 'dropdown')
+                // hide the generic Label field for template items
+                row.find('.ui-header-item-label').toggle(type !== 'template')
+            }
+
+            function labelRow (label) {
+                return $('<span>').css({ flex: '0 0 110px', fontSize: '12px', color: '#888' }).text(label)
+            }
+
+            $('#node-input-items-container').css('min-height', '150px').editableList({
+                addItem: function (container, index, data) {
+                    const item = data || {}
+                    container.css({ overflow: 'hidden', whiteSpace: 'nowrap' })
+                    const row = $('<div>').css({ display: 'flex', flexDirection: 'column', gap: '4px' }).appendTo(container)
+
+                    // Type + Label row
+                    const top = $('<div>').css({ display: 'flex', gap: '6px' }).appendTo(row)
+                    const typeSel = $('<select class="ui-header-item-type">').css({ flex: '0 0 110px' }).appendTo(top)
+                    typeOptions.forEach(function (o) {
+                        typeSel.append($('<option>').val(o.value).text(o.label))
+                    })
+                    typeSel.val(item.type || 'text')
+
+                    const label = $('<input type="text" class="ui-header-item-label" placeholder="Label / Text">')
+                        .css({ flex: '1' }).appendTo(top)
+                    label.val(item.label || '')
+
+                    // Key (text / template) - target this item via msg.topic
+                    const keyRow = $('<div class="ui-header-row-key">').css({ display: 'flex', gap: '6px' }).appendTo(row)
+                    labelRow('Key (topic)').appendTo(keyRow)
+                    const key = $('<input type="text" class="ui-header-item-key" placeholder="key to target via msg.topic">')
+                        .css({ flex: '1' }).appendTo(keyRow)
+                    key.val(item.key || '')
+
+                    // Dynamic (text) - show latest msg.payload instead of static label
+                    const dynamicRow = $('<div class="ui-header-row-dynamic">').css({ display: 'flex', gap: '6px', alignItems: 'center' }).appendTo(row)
+                    labelRow('Dynamic').appendTo(dynamicRow)
+                    const dynamic = $('<input type="checkbox" class="ui-header-item-dynamic">').css({ flex: '0 0 auto', margin: '0' }).appendTo(dynamicRow)
+                    dynamic.prop('checked', !!item.dynamic)
+                    $('<span>').css({ flex: '1', fontSize: '12px', color: '#888' }).text('show latest msg.payload').appendTo(dynamicRow)
+
+                    // HTML (template) - custom markup, supports {{value}} placeholder
+                    const htmlRow = $('<div class="ui-header-row-html">').css({ display: 'flex', gap: '6px' }).appendTo(row)
+                    labelRow('HTML').appendTo(htmlRow)
+                    const html = $('<textarea class="ui-header-item-html" rows="3" placeholder="<b>{{value}}</b> - supports theme colours via CSS">')
+                        .css({ flex: '1', resize: 'vertical', fontFamily: 'monospace' }).appendTo(htmlRow)
+                    html.val(item.html || '')
+
+                    // Payload (button)
+                    const payloadRow = $('<div class="ui-header-row-payload">').css({ display: 'flex', gap: '6px' }).appendTo(row)
+                    labelRow('Payload').appendTo(payloadRow)
+                    const payload = $('<input type="text" class="ui-header-item-payload" placeholder="msg.payload to send">')
+                        .css({ flex: '1' }).appendTo(payloadRow)
+                    payload.val(item.payload || '')
+
+                    // Icon (button) - mdi icon name, e.g. "plus" or "mdi-plus"
+                    const iconRow = $('<div class="ui-header-row-icon">').css({ display: 'flex', gap: '6px' }).appendTo(row)
+                    labelRow('Icon').appendTo(iconRow)
+                    const icon = $('<input type="text" class="ui-header-item-icon" placeholder="mdi icon name, e.g. plus, refresh, home">')
+                        .css({ flex: '1' }).appendTo(iconRow)
+                    icon.val(item.icon || '')
+
+                    // Icon position (button) - left or right of the label
+                    const iconPosRow = $('<div class="ui-header-row-iconpos">').css({ display: 'flex', gap: '6px' }).appendTo(row)
+                    labelRow('Icon position').appendTo(iconPosRow)
+                    const iconPos = $('<select class="ui-header-item-iconpos">').css({ flex: '1' }).appendTo(iconPosRow)
+                    ;[['left', 'Left of label'], ['right', 'Right of label']].forEach(function (o) {
+                        iconPos.append($('<option>').val(o[0]).text(o[1]))
+                    })
+                    iconPos.val(item.iconPos || 'left')
+
+                    // Options (dropdown) - one per line, "value=Label"
+                    const optionsRow = $('<div class="ui-header-row-options">').css({ display: 'flex', gap: '6px' }).appendTo(row)
+                    labelRow('Options').appendTo(optionsRow)
+                    const options = $('<textarea class="ui-header-item-options" rows="3" placeholder="value=Label (one per line)">')
+                        .css({ flex: '1', resize: 'vertical' }).appendTo(optionsRow)
+                    options.val(item.options || '')
+
+                    // Colour (text / button / dropdown) - theme colour name or CSS colour
+                    const colorRow = $('<div class="ui-header-row-color">').css({ display: 'flex', gap: '6px' }).appendTo(row)
+                    labelRow('Colour').appendTo(colorRow)
+                    const color = $('<input type="text" class="ui-header-item-color" placeholder="primary | secondary | #ff8e00 ...">')
+                        .css({ flex: '1' }).appendTo(colorRow)
+                    color.val(item.color || '')
+
+                    // Style (text) - font family, size, weight
+                    const styleRow = $('<div class="ui-header-row-style">').css({ display: 'flex', gap: '6px' }).appendTo(row)
+                    labelRow('Font / Size / Wt').appendTo(styleRow)
+                    const font = $('<input type="text" class="ui-header-item-font" placeholder="font-family">')
+                        .css({ flex: '1' }).appendTo(styleRow)
+                    font.val(item.font || '')
+                    const fontSize = $('<input type="text" class="ui-header-item-fontsize" placeholder="size (e.g. 20 or 1.5rem)">')
+                        .css({ flex: '0 0 140px' }).appendTo(styleRow)
+                    fontSize.val(item.fontSize || '')
+                    const fontWeight = $('<select class="ui-header-item-fontweight">').css({ flex: '0 0 100px' }).appendTo(styleRow)
+                    ;['', 'normal', 'bold', '300', '400', '500', '600', '700', '800', '900'].forEach(function (w) {
+                        fontWeight.append($('<option>').val(w).text(w === '' ? 'weight' : w))
+                    })
+                    fontWeight.val(item.fontWeight || '')
+
+                    // Width (text / button) - free CSS width (bare number = px)
+                    const widthRow = $('<div class="ui-header-row-width">').css({ display: 'flex', gap: '6px' }).appendTo(row)
+                    labelRow('Width').appendTo(widthRow)
+                    const width = $('<input type="text" class="ui-header-item-width" placeholder="e.g. 80, 6rem, 120px (optional)">')
+                        .css({ flex: '1' }).appendTo(widthRow)
+                    width.val(item.width || '')
+
+                    // Alignment (text / button / template) - left, center or right
+                    const alignRow = $('<div class="ui-header-row-align">').css({ display: 'flex', gap: '6px' }).appendTo(row)
+                    labelRow('Alignment').appendTo(alignRow)
+                    const align = $('<select class="ui-header-item-align">').css({ flex: '1' }).appendTo(alignRow)
+                    ;[['left', 'Left'], ['center', 'Center'], ['right', 'Right']].forEach(function (o) {
+                        align.append($('<option>').val(o[0]).text(o[1]))
+                    })
+                    align.val(item.align || 'left')
+
+                    // Topic (button / dropdown)
+                    const topicRow = $('<div class="ui-header-row-topic">').css({ display: 'flex', gap: '6px' }).appendTo(row)
+                    labelRow('Topic').appendTo(topicRow)
+                    const topic = $('<input type="text" class="ui-header-item-topic" placeholder="msg.topic (optional)">')
+                        .css({ flex: '1' }).appendTo(topicRow)
+                    topic.val(item.topic || '')
+
+                    typeSel.on('change', function () { rowVisibility(row) })
+                    rowVisibility(row)
+                },
+                removable: true,
+                sortable: true
+            })
+
+            const items = this.items || []
+            items.forEach(function (item) {
+                $('#node-input-items-container').editableList('addItem', item)
+            })
+
+            // --- Page visibility checkboxes -------------------------------
+            function updateSelectAll () {
+                const all = $('#node-input-pages-container .ui-header-page')
+                const checked = all.filter(':checked')
+                const allBox = $('#node-input-pages-all')
+                if (!all.length) {
+                    allBox.prop('checked', false).prop('indeterminate', false)
+                    return
+                }
+                if (checked.length === all.length) {
+                    allBox.prop('checked', true).prop('indeterminate', false)
+                } else if (checked.length === 0) {
+                    allBox.prop('checked', false).prop('indeterminate', false)
+                } else {
+                    allBox.prop('checked', false).prop('indeterminate', true)
+                }
+            }
+
+            function renderPages () {
+                const container = $('#node-input-pages-container').empty()
+                const selectedBase = $('#node-input-ui').val()
+                const saved = Array.isArray(node.pages) ? node.pages : []
+                const showAll = saved.length === 0 // empty => all pages
+                const pages = []
+                RED.nodes.eachConfig(function (n) {
+                    if (n.type === 'ui-page' && (!selectedBase || selectedBase === '_ADD_' || n.ui === selectedBase)) {
+                        pages.push(n)
+                    }
+                })
+                if (!pages.length) {
+                    container.append($('<div>').css({ color: '#888', fontSize: '12px', padding: '4px' })
+                        .text('No pages found for this dashboard. Header will show on all pages.'))
+                    updateSelectAll()
+                    return
+                }
+                pages.forEach(function (p) {
+                    const rowEl = $('<label>').css({ display: 'flex', alignItems: 'center', gap: '6px', margin: '2px 0', cursor: 'pointer' })
+                    const cb = $('<input type="checkbox" class="ui-header-page">').css({ margin: '0' }).val(p.id).appendTo(rowEl)
+                    cb.prop('checked', showAll ? true : saved.indexOf(p.id) !== -1)
+                    cb.on('change', updateSelectAll)
+                    $('<span>').css({ fontSize: '13px' }).text(p.name || p.id).appendTo(rowEl)
+                    container.append(rowEl)
+                })
+                updateSelectAll()
+            }
+
+            $('#node-input-pages-all').on('change', function () {
+                const checked = $(this).prop('checked')
+                $('#node-input-pages-container .ui-header-page').prop('checked', checked)
+                $(this).prop('indeterminate', false)
+            })
+            $('#node-input-ui').on('change', renderPages)
+            renderPages()
+        },
+        oneditsave: function () {
+            const items = []
+            $('#node-input-items-container').editableList('items').each(function () {
+                const row = $(this)
+                items.push({
+                    type: row.find('.ui-header-item-type').val(),
+                    label: row.find('.ui-header-item-label').val(),
+                    key: row.find('.ui-header-item-key').val(),
+                    payload: row.find('.ui-header-item-payload').val(),
+                    options: row.find('.ui-header-item-options').val(),
+                    html: row.find('.ui-header-item-html').val(),
+                    color: row.find('.ui-header-item-color').val(),
+                    font: row.find('.ui-header-item-font').val(),
+                    fontSize: row.find('.ui-header-item-fontsize').val(),
+                    fontWeight: row.find('.ui-header-item-fontweight').val(),
+                    width: row.find('.ui-header-item-width').val(),
+                    icon: row.find('.ui-header-item-icon').val(),
+                    iconPos: row.find('.ui-header-item-iconpos').val(),
+                    align: row.find('.ui-header-item-align').val(),
+                    topic: row.find('.ui-header-item-topic').val(),
+                    dynamic: row.find('.ui-header-item-dynamic').prop('checked')
+                })
+            })
+            this.items = items
+
+            // page visibility: store [] when all pages are selected (also covers
+            // future pages), a sentinel when none are selected, else the explicit ids
+            const pageBoxes = $('#node-input-pages-container .ui-header-page')
+            const checkedPages = []
+            pageBoxes.each(function () {
+                if ($(this).prop('checked')) {
+                    checkedPages.push($(this).val())
+                }
+            })
+            if (pageBoxes.length === 0 || checkedPages.length === pageBoxes.length) {
+                this.pages = [] // all pages
+            } else if (checkedPages.length === 0) {
+                this.pages = ['__none__'] // explicitly no pages
+            } else {
+                this.pages = checkedPages
+            }
+        },
+        oneditresize: function (size) {
+            // make the Items list grow/shrink with the edit dialog
+            const dialog = $('#dialog-form')
+            let height = size.height
+            dialog.children('.form-row:not(.node-input-items-row)').each(function () {
+                height -= $(this).outerHeight(true)
+            })
+            const itemsRow = dialog.children('.node-input-items-row')
+            const label = itemsRow.prev('.form-row')
+            if (label.length) {
+                height -= label.outerHeight(true)
+            }
+            height -= 16
+            if (height < 150) {
+                height = 150
+            }
+            $('#node-input-items-container').editableList('height', height)
+        }
+    })
+</script>
+
+<script type="text/html" data-template-name="ui-header">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-ui"><i class="fa fa-desktop"></i> Dashboard</label>
+        <input type="text" id="node-input-ui">
+    </div>
+    <div class="form-row">
+        <label for="node-input-align"><i class="fa fa-align-left"></i> Position</label>
+        <select id="node-input-align" style="width:70%">
+            <option value="left">Left (next to page title)</option>
+            <option value="right">Right (app bar actions)</option>
+        </select>
+    </div>
+    <div class="form-row">
+        <label><i class="fa fa-files-o"></i> Pages</label>
+        <label style="width:auto; display:inline-flex; align-items:center; gap:6px; margin-left:6px;">
+            <input type="checkbox" id="node-input-pages-all" style="margin:0; width:auto;">
+            <span>All pages</span>
+        </label>
+    </div>
+    <div class="form-row">
+        <div id="node-input-pages-container" style="border:1px solid var(--red-ui-form-input-border-color, #ccc); border-radius:4px; padding:6px 8px; max-height:160px; overflow:auto;"></div>
+    </div>
+    <div class="form-row" style="margin-bottom:0;">
+        <label><i class="fa fa-list"></i> Items</label>
+    </div>
+    <div class="form-row node-input-items-row">
+        <ol id="node-input-items-container"></ol>
+    </div>
+</script>
+
+<script type="text/html" data-help-name="ui-header">
+    <p>Renders content (text, buttons, dropdowns, custom HTML) into the Dashboard 2.0 header, next to the page title, on <b>every</b> page.</p>
+    <h3>Configuration</h3>
+    <dl class="message-properties">
+        <dt>Dashboard <span class="property-type">ui-base</span></dt>
+        <dd>The dashboard whose header this content is rendered into.</dd>
+        <dt>Position <span class="property-type">option</span></dt>
+        <dd><b>Left</b> renders next to the page title; <b>Right</b> renders in the app bar actions area.</dd>
+        <dt>Pages <span class="property-type">checkboxes</span></dt>
+        <dd>Select on which pages the header is shown. <b>All pages</b> (default) also covers pages added later.</dd>
+        <dt>Items <span class="property-type">list</span></dt>
+        <dd>
+            <ul>
+                <li><b>Text</b> &ndash; a static label, or (Dynamic) the latest payload for its <i>Key</i>.</li>
+                <li><b>Button</b> &ndash; emits a message with the configured payload &amp; topic on click.</li>
+                <li><b>Dropdown</b> &ndash; emits the selected value on change. Options use <code>value=Label</code> per line.</li>
+                <li><b>Template/HTML</b> &ndash; custom markup. <code>{{value}}</code> is replaced by the latest payload for its <i>Key</i>. Use theme colours via CSS, e.g. <code>color: rgb(var(--v-theme-primary))</code>.</li>
+            </ul>
+        </dd>
+        <dt>Key <span class="property-type">string</span></dt>
+        <dd>Targets a Text/Template item via <code>msg.topic</code>. A message with no topic updates items that have an empty key.</dd>
+        <dt>Colour <span class="property-type">string</span></dt>
+        <dd>A Vuetify theme colour name (<code>primary</code>, <code>secondary</code>, <code>error</code>, ...) or any CSS colour.</dd>
+        <dt>Font / Size / Weight <span class="property-type">string</span></dt>
+        <dd>(Text &amp; Button) Font family, size (bare numbers = px) and weight.</dd>
+        <dt>Alignment <span class="property-type">option</span></dt>
+        <dd>(Text / Button / Template) Left, center or right. Most noticeable together with a fixed <i>Width</i>.</dd>
+        <dt>Icon / Icon position <span class="property-type">string / option</span></dt>
+        <dd>(Button) mdi icon and whether it sits left or right of the label. With no label the icon is centered.</dd>
+    </dl>
+    <h3>Input</h3>
+    <p>Send <code>{ topic: "&lt;key&gt;", payload: "&lt;value&gt;" }</code> to update a specific Dynamic text / Template item.</p>
+    <p>Dynamic styling (targeted via <code>msg.topic</code> = item key), like the core <code>ui-text</code> node:</p>
+    <dl class="message-properties">
+        <dt class="optional">color <span class="property-type">string</span></dt>
+        <dd>Theme colour name or CSS colour.</dd>
+        <dt class="optional">font <span class="property-type">string</span></dt>
+        <dd>CSS font-family.</dd>
+        <dt class="optional">fontSize <span class="property-type">string</span></dt>
+        <dd>Bare number = px, or any CSS size (e.g. <code>1.5rem</code>).</dd>
+        <dt class="optional">fontWeight <span class="property-type">string</span></dt>
+        <dd><code>normal</code>, <code>bold</code> or a numeric weight.</dd>
+        <dt class="optional">width <span class="property-type">string</span></dt>
+        <dd>Item width (text / button). Bare number = px, or any CSS size.</dd>
+        <dt class="optional">icon <span class="property-type">string</span></dt>
+        <dd>(Button) mdi icon name, e.g. <code>plus</code> or <code>mdi-plus</code>.</dd>
+    </dl>
+    <pre>msg = { topic: "team1", payload: "70:00", ui_update: { color: "warning", fontSize: 24, fontWeight: "bold" } }</pre>
+    <h3>Output</h3>
+    <p>Button clicks and dropdown changes emit a <code>msg</code> with <code>payload</code> (and <code>topic</code> if set).</p>
+</script>

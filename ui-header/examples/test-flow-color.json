@@ -1,0 +1,210 @@
+[
+    {
+        "id": "header_base",
+        "type": "ui-base",
+        "name": "Header Test Dashboard",
+        "path": "/dashboard",
+        "appIcon": "",
+        "includeClientData": true,
+        "acceptsClientConfig": ["ui-notification", "ui-control"],
+        "showPathInSidebar": false,
+        "headerContent": "page",
+        "navigationStyle": "default",
+        "titleBarStyle": "default"
+    },
+    {
+        "id": "header_theme",
+        "type": "ui-theme",
+        "name": "Default Theme",
+        "colors": {
+            "surface": "#ffffff",
+            "primary": "#0094CE",
+            "bgPage": "#eeeeee",
+            "groupBg": "#ffffff",
+            "groupOutline": "#cccccc"
+        },
+        "sizes": {
+            "density": "default",
+            "pagePadding": "12px",
+            "groupGap": "12px",
+            "groupBorderRadius": "4px",
+            "widgetGap": "12px"
+        }
+    },
+    {
+        "id": "header_page",
+        "type": "ui-page",
+        "name": "Spielstand",
+        "ui": "header_base",
+        "path": "/spielstand",
+        "icon": "home",
+        "layout": "grid",
+        "theme": "header_theme",
+        "order": 1,
+        "className": "",
+        "visible": true,
+        "disabled": false
+    },
+    {
+        "id": "header_node",
+        "type": "ui-header",
+        "name": "Spielstand Header",
+        "ui": "header_base",
+        "align": "right",
+        "order": 0,
+        "items": [
+            {
+                "type": "text",
+                "label": "00:00",
+                "key": "team1",
+                "payload": "",
+                "options": "",
+                "html": "",
+                "color": "primary",
+                "font": "monospace",
+                "fontSize": "22",
+                "fontWeight": "bold",
+                "topic": "",
+                "dynamic": true
+            },
+            {
+                "type": "text",
+                "label": ":",
+                "key": "",
+                "payload": "",
+                "options": "",
+                "html": "",
+                "color": "",
+                "font": "",
+                "fontSize": "22",
+                "fontWeight": "bold",
+                "topic": "",
+                "dynamic": false
+            },
+            {
+                "type": "text",
+                "label": "00:00",
+                "key": "team2",
+                "payload": "",
+                "options": "",
+                "html": "",
+                "color": "secondary",
+                "font": "monospace",
+                "fontSize": "22",
+                "fontWeight": "bold",
+                "topic": "",
+                "dynamic": true
+            }
+        ],
+        "x": 640,
+        "y": 220,
+        "wires": [[]]
+    },
+    {
+        "id": "inj_team1_red",
+        "type": "inject",
+        "name": "Team1 -> rot 70:00",
+        "props": [
+            { "p": "topic", "vt": "str" },
+            { "p": "payload" },
+            { "p": "ui_update", "v": "{\"color\":\"error\",\"fontWeight\":\"bold\"}", "vt": "json" }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "topic": "team1",
+        "payload": "70:00",
+        "payloadType": "str",
+        "x": 320,
+        "y": 120,
+        "wires": [["header_node"]]
+    },
+    {
+        "id": "inj_team1_green",
+        "type": "inject",
+        "name": "Team1 -> grün 99:99",
+        "props": [
+            { "p": "topic", "vt": "str" },
+            { "p": "payload" },
+            { "p": "ui_update", "v": "{\"color\":\"success\",\"fontSize\":28}", "vt": "json" }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "topic": "team1",
+        "payload": "99:99",
+        "payloadType": "str",
+        "x": 320,
+        "y": 170,
+        "wires": [["header_node"]]
+    },
+    {
+        "id": "inj_team2_warn",
+        "type": "inject",
+        "name": "Team2 -> warning 45:00",
+        "props": [
+            { "p": "topic", "vt": "str" },
+            { "p": "payload" },
+            { "p": "ui_update", "v": "{\"color\":\"warning\"}", "vt": "json" }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "topic": "team2",
+        "payload": "45:00",
+        "payloadType": "str",
+        "x": 330,
+        "y": 240,
+        "wires": [["header_node"]]
+    },
+    {
+        "id": "inj_team2_reset",
+        "type": "inject",
+        "name": "Team2 -> reset (theme) 00:00",
+        "props": [
+            { "p": "topic", "vt": "str" },
+            { "p": "payload" },
+            { "p": "ui_update", "v": "{\"color\":\"secondary\",\"fontSize\":22,\"fontWeight\":\"bold\"}", "vt": "json" }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "topic": "team2",
+        "payload": "00:00",
+        "payloadType": "str",
+        "x": 350,
+        "y": 290,
+        "wires": [["header_node"]]
+    },
+    {
+        "id": "inj_live_clock",
+        "type": "inject",
+        "name": "Team1 Live-Uhr (1s) blau",
+        "props": [
+            { "p": "topic", "vt": "str" },
+            { "p": "payload" },
+            { "p": "ui_update", "v": "{\"color\":\"primary\"}", "vt": "json" }
+        ],
+        "repeat": "1",
+        "crontab": "",
+        "once": false,
+        "topic": "team1",
+        "payload": "",
+        "payloadType": "date",
+        "x": 330,
+        "y": 360,
+        "wires": [["fmt_clock"]]
+    },
+    {
+        "id": "fmt_clock",
+        "type": "function",
+        "name": "mm:ss",
+        "func": "const d = new Date(msg.payload)\nconst mm = String(d.getMinutes()).padStart(2, '0')\nconst ss = String(d.getSeconds()).padStart(2, '0')\nmsg.payload = `${mm}:${ss}`\nreturn msg",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "x": 530,
+        "y": 360,
+        "wires": [["header_node"]]
+    }
+]

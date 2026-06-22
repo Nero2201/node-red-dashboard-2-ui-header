@@ -1,0 +1,4 @@
+node_modules/
+ui/dist/
+resources/
+package-lock.json

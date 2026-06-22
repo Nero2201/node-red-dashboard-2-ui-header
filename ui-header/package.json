@@ -1,0 +1,61 @@
+{
+    "name": "node-red-dashboard-2-ui-header",
+    "version": "1.0.0",
+    "description": "A FlowFuse Dashboard 2.0 node that renders configurable content (text, buttons, dropdowns) directly into the dashboard header, next to the page title, on every page.",
+    "keywords": [
+        "node-red",
+        "node-red-dashboard-2",
+        "dashboard",
+        "header",
+        "appbar"
+    ],
+    "license": "Apache-2.0",
+    "author": "Benjamin Kasser",
+    "homepage": "https://github.com/nero2201/node-red-db-2-ui-header#readme",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/nero2201/node-red-db-2-ui-header.git"
+    },
+    "bugs": {
+        "url": "https://github.com/nero2201/node-red-db-2-ui-header/issues"
+    },
+    "exports": {
+        "require": "./resources/ui-header.umd.js"
+    },
+    "files": [
+        "nodes/*",
+        "resources/*"
+    ],
+    "scripts": {
+        "build": "vite build",
+        "build:dev": "NODE_ENV=development vite build",
+        "dev": "NODE_ENV=development vite build --watch"
+    },
+    "dependencies": {},
+    "devDependencies": {
+        "@vitejs/plugin-vue": "^5.0.0",
+        "vite": "^5.0.13",
+        "vite-plugin-css-injected-by-js": "^3.3.0",
+        "vite-plugin-static-copy": "^1.0.6",
+        "vue": "^3.4.0",
+        "vuex": "^4.1.0"
+    },
+    "engines": {
+        "node": ">=18"
+    },
+    "node-red": {
+        "version": ">=3.0.0",
+        "nodes": {
+            "ui-header": "nodes/ui-header.js"
+        }
+    },
+    "node-red-dashboard-2": {
+        "version": "1.0.0",
+        "widgets": {
+            "ui-header": {
+                "output": "ui-header.umd.js",
+                "component": "UIHeader"
+            }
+        }
+    }
+}
