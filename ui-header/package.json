@@ -29,7 +29,8 @@
     "scripts": {
         "build": "vite build",
         "build:dev": "NODE_ENV=development vite build",
-        "dev": "NODE_ENV=development vite build --watch"
+        "dev": "NODE_ENV=development vite build --watch",
+        "prepublishOnly": "vite build"
     },
     "dependencies": {},
     "devDependencies": {

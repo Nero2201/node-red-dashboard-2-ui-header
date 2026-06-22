@@ -1,0 +1,9 @@
+# Source & tooling - not needed in the published package
+ui/
+vite.config.mjs
+.gitignore
+examples/
+node_modules/
+package-lock.json
+
+# IMPORTANT: do NOT ignore resources/ - the built widget bundle ships from there
