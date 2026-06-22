@@ -1,5 +1,5 @@
 {
-    "name": "node-red-dashboard-2-ui-header",
+    "name": "@nero2201/node-red-dashboard-2-ui-header",
     "version": "1.0.0",
     "description": "A FlowFuse Dashboard 2.0 node that renders configurable content (text, buttons, dropdowns) directly into the dashboard header, next to the page title, on every page.",
     "keywords": [
