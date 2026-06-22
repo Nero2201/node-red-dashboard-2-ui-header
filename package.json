@@ -1,6 +1,6 @@
 {
     "name": "@nero2201/node-red-dashboard-2-ui-header",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "A FlowFuse Dashboard 2.0 node that renders configurable content (text, buttons, dropdowns) directly into the dashboard header, next to the page title, on every page.",
     "keywords": [
         "node-red",
@@ -11,13 +11,13 @@
     ],
     "license": "Apache-2.0",
     "author": "Benjamin Kasser",
-    "homepage": "https://github.com/nero2201/node-red-db-2-ui-header#readme",
+    "homepage": "https://github.com/nero2201/node-red-dashboard-2-ui-header#readme",
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/nero2201/node-red-db-2-ui-header.git"
+        "url": "git+https://github.com/nero2201/node-red-dashboard-2-ui-header.git"
     },
     "bugs": {
-        "url": "https://github.com/nero2201/node-red-db-2-ui-header/issues"
+        "url": "https://github.com/nero2201/node-red-dashboard-2-ui-header/issues"
     },
     "exports": {
         "require": "./resources/ui-header.umd.js"
