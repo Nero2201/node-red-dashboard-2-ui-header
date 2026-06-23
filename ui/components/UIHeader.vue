@@ -125,9 +125,17 @@ export default {
             ]
             return themeColors.includes(c) ? `rgb(var(--v-theme-${c}))` : c
         },
-        // the storage key for an item (text/template -> by configured key, else default)
+        // the storage key for an item. Text/Template use their configured Key;
+        // Buttons/Dropdowns fall back to their Topic so they can be targeted via
+        // msg.topic for dynamic updates (e.g. ui_update.icon / colour).
         itemKey (item) {
-            return item.key && item.key.length ? item.key : '__default__'
+            if (item.key && item.key.length) {
+                return item.key
+            }
+            if (item.topic && item.topic.length) {
+                return item.topic
+            }
+            return '__default__'
         },
         // storage key for a dropdown (configured key, else stable per-index key)
         dropdownKey (item, idx) {
@@ -331,7 +339,34 @@ export default {
 .nrdb-ui-header {
     display: flex;
     align-items: center;
+    flex-wrap: nowrap;
     gap: 8px;
+    /* always keep items on a single row; if they don't fit, scroll sideways.
+       never wrap and never scroll vertically. */
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    /* thin, auto-hiding horizontal scrollbar */
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+}
+.nrdb-ui-header > * {
+    flex-shrink: 0;
+}
+.nrdb-ui-header:hover {
+    scrollbar-color: rgba(var(--v-theme-on-surface), 0.4) transparent;
+}
+.nrdb-ui-header::-webkit-scrollbar {
+    height: 6px;
+}
+.nrdb-ui-header::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 3px;
+}
+.nrdb-ui-header:hover::-webkit-scrollbar-thumb {
+    background: rgba(var(--v-theme-on-surface), 0.4);
 }
 .nrdb-ui-header__text {
     font-size: 1rem;
@@ -345,6 +380,20 @@ export default {
     color: rgb(var(--v-theme-on-surface));
 }
 .nrdb-ui-header__dropdown {
-    min-width: 140px;
+    /* don't let Vuetify's v-input (flex:1 1 auto) stretch across the bar;
+       keep a sensible default with a min width, overridable via the width setting. */
+    flex: 0 0 auto;
+    min-width: 100px;
+    width: 140px;
+}
+</style>
+
+<!-- global (non-scoped): allow the app bar teleport targets to shrink below
+     their content width so our horizontal scroll can kick in. -->
+<style>
+#app-bar-title,
+#app-bar-actions {
+    min-width: 0;
+    overflow: hidden;
 }
 </style>

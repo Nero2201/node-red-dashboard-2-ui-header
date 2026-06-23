@@ -44,7 +44,7 @@
                 row.find('.ui-header-row-icon').toggle(type === 'button')
                 row.find('.ui-header-row-iconpos').toggle(type === 'button')
                 row.find('.ui-header-row-align').toggle(type === 'text' || type === 'button' || type === 'template')
-                row.find('.ui-header-row-width').toggle(type === 'text' || type === 'button')
+                row.find('.ui-header-row-width').toggle(type === 'text' || type === 'button' || type === 'dropdown')
                 row.find('.ui-header-row-topic').toggle(type === 'button' || type === 'dropdown')
                 // hide the generic Label field for template items
                 row.find('.ui-header-item-label').toggle(type !== 'template')
@@ -61,7 +61,8 @@
                     const row = $('<div>').css({ display: 'flex', flexDirection: 'column', gap: '4px' }).appendTo(container)
 
                     // Type + Label row
-                    const top = $('<div>').css({ display: 'flex', gap: '6px' }).appendTo(row)
+                    const top = $('<div>').css({ display: 'flex', gap: '6px', alignItems: 'center' }).appendTo(row)
+                    const collapseBtn = $('<button type="button">').css({ flex: '0 0 22px', height: '26px', cursor: 'pointer', border: '1px solid var(--red-ui-form-input-border-color, #ccc)', borderRadius: '4px', background: 'transparent', padding: '0' }).appendTo(top)
                     const typeSel = $('<select class="ui-header-item-type">').css({ flex: '0 0 110px' }).appendTo(top)
                     typeOptions.forEach(function (o) {
                         typeSel.append($('<option>').val(o.value).text(o.label))
@@ -71,6 +72,18 @@
                     const label = $('<input type="text" class="ui-header-item-label" placeholder="Label / Text">')
                         .css({ flex: '1' }).appendTo(top)
                     label.val(item.label || '')
+
+                    // collapse / expand all detail rows for a cleaner overview
+                    let collapsed = !!item.type // loaded items start collapsed; new ones expanded
+                    function applyCollapse () {
+                        if (collapsed) {
+                            row.children().not(top).hide()
+                        } else {
+                            rowVisibility(row)
+                        }
+                        collapseBtn.text(collapsed ? '\u25B6' : '\u25BC')
+                    }
+                    collapseBtn.on('click', function () { collapsed = !collapsed; applyCollapse() })
 
                     // Key (text / template) - target this item via msg.topic
                     const keyRow = $('<div class="ui-header-row-key">').css({ display: 'flex', gap: '6px' }).appendTo(row)
@@ -82,9 +95,10 @@
                     // Dynamic (text) - show latest msg.payload instead of static label
                     const dynamicRow = $('<div class="ui-header-row-dynamic">').css({ display: 'flex', gap: '6px', alignItems: 'center' }).appendTo(row)
                     labelRow('Dynamic').appendTo(dynamicRow)
-                    const dynamic = $('<input type="checkbox" class="ui-header-item-dynamic">').css({ flex: '0 0 auto', margin: '0' }).appendTo(dynamicRow)
+                    const dynWrap = $('<div>').css({ flex: '1', display: 'flex', alignItems: 'center', gap: '6px' }).appendTo(dynamicRow)
+                    const dynamic = $('<input type="checkbox" class="ui-header-item-dynamic">').css({ margin: '0', width: 'auto', flex: '0 0 auto' }).appendTo(dynWrap)
                     dynamic.prop('checked', !!item.dynamic)
-                    $('<span>').css({ flex: '1', fontSize: '12px', color: '#888' }).text('show latest msg.payload').appendTo(dynamicRow)
+                    $('<span>').css({ fontSize: '12px', color: '#888' }).text('show latest msg.payload').appendTo(dynWrap)
 
                     // HTML (template) - custom markup, supports {{value}} placeholder
                     const htmlRow = $('<div class="ui-header-row-html">').css({ display: 'flex', gap: '6px' }).appendTo(row)
@@ -136,8 +150,8 @@
                     const font = $('<input type="text" class="ui-header-item-font" placeholder="font-family">')
                         .css({ flex: '1' }).appendTo(styleRow)
                     font.val(item.font || '')
-                    const fontSize = $('<input type="text" class="ui-header-item-fontsize" placeholder="size (e.g. 20 or 1.5rem)">')
-                        .css({ flex: '0 0 140px' }).appendTo(styleRow)
+                    const fontSize = $('<input type="text" class="ui-header-item-fontsize" placeholder="size">')
+                        .css({ flex: '0 0 70px' }).appendTo(styleRow)
                     fontSize.val(item.fontSize || '')
                     const fontWeight = $('<select class="ui-header-item-fontweight">').css({ flex: '0 0 100px' }).appendTo(styleRow)
                     ;['', 'normal', 'bold', '300', '400', '500', '600', '700', '800', '900'].forEach(function (w) {
@@ -169,7 +183,7 @@
                     topic.val(item.topic || '')
 
                     typeSel.on('change', function () { rowVisibility(row) })
-                    rowVisibility(row)
+                    applyCollapse()
                 },
                 removable: true,
                 sortable: true
@@ -216,11 +230,11 @@
                     return
                 }
                 pages.forEach(function (p) {
-                    const rowEl = $('<label>').css({ display: 'flex', alignItems: 'center', gap: '6px', margin: '2px 0', cursor: 'pointer' })
-                    const cb = $('<input type="checkbox" class="ui-header-page">').css({ margin: '0' }).val(p.id).appendTo(rowEl)
+                    const rowEl = $('<label>').css({ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', float: 'none', margin: '0', padding: '3px 2px', cursor: 'pointer', boxSizing: 'border-box' })
+                    const cb = $('<input type="checkbox" class="ui-header-page">').css({ margin: '0', width: 'auto', flex: '0 0 auto' }).val(p.id).appendTo(rowEl)
                     cb.prop('checked', showAll ? true : saved.indexOf(p.id) !== -1)
                     cb.on('change', updateSelectAll)
-                    $('<span>').css({ fontSize: '13px' }).text(p.name || p.id).appendTo(rowEl)
+                    $('<span>').css({ flex: '1', fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }).text(p.name || p.id).appendTo(rowEl)
                     container.append(rowEl)
                 })
                 updateSelectAll()
